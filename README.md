@@ -1,5 +1,7 @@
 # vk-vue
 
+Requires environment variable `VUE_APP_VK_APP_ID` with valid vk app id, also you should have vk account (need to login) to be able to use the app
+
 ## Project setup
 ```
 yarn install
