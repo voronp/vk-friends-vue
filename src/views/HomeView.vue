@@ -9,7 +9,6 @@
         cache-items
         flat
         label="Search user:"
-        return-object
         multiple
         chips
         closable-chips
@@ -60,11 +59,14 @@ const select = computed({
     store.commit('search/setSelected', v)
   }
 })
+watch(() => select.value.join(','), (v) => {
+  store.dispatch('search/addUserToDict', [...select.value])
+})
 const isBuildLoading = ref(false)
 const build = async () => {
   isBuildLoading.value = true
   await Promise.all(store.state.search.selected.map(v => {
-    const id = store.getters['search/itemsDict'][v].id
+    const id = store.state.search.itemsDict[v].id
     return store.dispatch('friends/getFriendsVK', id)
   }))
   isBuildLoading.value = false

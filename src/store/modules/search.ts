@@ -25,6 +25,7 @@ interface SearchState {
   error: string;
   items: SearchItem[]
   selected: string[],
+  itemsDict: ItemsDict,
   status: SearchStatusEnum;
 }
 
@@ -32,6 +33,7 @@ const state:() => SearchState = () => ({
   error: '',
   items: [],
   selected: [],
+  itemsDict: {},
   status: 'initial',
 });
 
@@ -42,13 +44,9 @@ interface ItemsDict {
 const getters = {
   autocompleteItems: (state:SearchState):ExtendedSearchItem[] => state.items.map(v => ({
     ...v,
-    title: `${v.first_name} ${v.last_name}`,
+    title: `${v.first_name} ${v.last_name} (${v.screen_name})`,
     value: v.screen_name
-  })),
-  itemsDict: (state:SearchState, g:{autocompleteItems:ExtendedSearchItem[]}) => g.autocompleteItems.reduce((acc, v) => ({...acc, [v.screen_name]: v}), {}),
-  autocompleteSelected: (state:SearchState, g:{itemsDict:ItemsDict}) => {
-    return state.selected.map(v => g.itemsDict[v].title)
-  }
+  }))
 }
 
 const mutations = {
@@ -61,12 +59,21 @@ const mutations = {
   setSelected: (state:SearchState, payload:string[]) => {
     state.selected = payload;
   },
+  setItemsDict: (state:SearchState, payload:ItemsDict) => {
+    state.itemsDict = payload;
+  },
   setError: (state:SearchState, payload:string) => {
     state.error = payload;
   },
 };
 
 const actions = {
+  addUserToDict({commit, getters, state}:ActionContext<SearchState, unknown>, ids:string[]) {
+    const missingIds = ids.filter((v) => !state.itemsDict[v])
+    const missingItems = getters.autocompleteItems.filter((v:ExtendedSearchItem) => missingIds.includes(v.screen_name))
+    const allItems:ItemsDict = missingItems.reduce((acc:ItemsDict, v:ExtendedSearchItem) => ({...acc, [v.screen_name]: v}), {...state.itemsDict})
+    commit('setItemsDict', allItems)
+  },
   searchUserVK({commit}:ActionContext<SearchState, unknown>, q:string) {
     commit('setStatus', 'loading');
     vk.call('users.search', {q, v: '5.131', fields: ['sex', 'bdate', 'photo_50', 'screen_name'] }).then((data) => {
